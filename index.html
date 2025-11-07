@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ultimate Quiz App</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="setup-screen" class="screen active">
+    <h1 class="title">🔥 Ultimate Quiz Setup</h1>
+    <label>Total Questions (max 200):</label>
+    <input type="number" id="total-questions" min="1" max="200" value="5" />
+    
+    <label>Time Limit (minutes):</label>
+    <input type="number" id="time-limit" min="1" max="120" value="2" />
+    
+    <label>Marks for Correct Answer:</label>
+    <input type="number" id="marks-correct" min="0" value="4" />
+    
+    <label>Marks Deduct for Wrong Answer:</label>
+    <input type="number" id="marks-wrong" min="0" value="1" />
+
+    <button id="add-question-btn">➕ Add Question</button>
+    <button id="start-btn" onclick="startTest()">🚀 Start Test</button>
+
+    <div id="question-list"></div>
+  </div>
+
+  <div id="quiz-screen" class="screen hidden">
+    <div class="quiz-header">
+      <span id="timer">00:00</span>
+      <span id="question-count"></span>
+    </div>
+
+    <div id="question-container"></div>
+
+    <div class="nav-btns">
+      <button onclick="prevQuestion()">⬅️ Previous</button>
+      <button onclick="nextQuestion()">➡️ Next</button>
+      <button onclick="submitQuiz()">✅ Submit</button>
+    </div>
+  </div>
+
+  <div id="result-screen" class="screen hidden">
+    <h2>📊 Result Analysis</h2>
+    <div id="result-message"></div>
+    <div id="details"></div>
+    <p id="footnote">⚠️ Bhai, ye sirf practice ke liye hai — serious test me aur mahinat kar!</p>
+    <button onclick="location.reload()">🔁 Restart</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
