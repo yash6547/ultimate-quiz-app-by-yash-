@@ -1,55 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ultimate Quiz App</title>
-  <link rel="stylesheet" href="style.css" />
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Minimal MCQ Quiz Organiser</title>
+
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div id="setup-screen" class="screen active">
-    <h1 class="title">🔥 Ultimate Quiz Setup</h1>
-    <label>Total Questions (max 200):</label>
-    <input type="number" id="total-questions" min="1" max="200" value="5" />
-    
-    <label>Time Limit (minutes):</label>
-    <input type="number" id="time-limit" min="1" max="120" value="2" />
-    
-    <label>Marks for Correct Answer:</label>
-    <input type="number" id="marks-correct" min="0" value="4" />
-    
-    <label>Marks Deduct for Wrong Answer:</label>
-    <input type="number" id="marks-wrong" min="0" value="1" />
 
-    <button id="add-question-btn">➕ Add Question</button>
-    <button id="start-btn" onclick="startTest()">🚀 Start Test</button>
+<div class="container">
+<h1>Minimal MCQ Quiz Organiser</h1>
 
-    <div id="question-list"></div>
-  </div>
+<div class="box">
+<h3>Import MCQ (Paste or .txt File)</h3>
+<p>Paste text or choose .txt file with exact MCQ format</p>
 
-  <div id="quiz-screen" class="screen hidden">
-    <div class="quiz-header">
-      <span id="timer">00:00</span>
-      <span id="question-count"></span>
-    </div>
+<textarea id="bulkInput" rows="12"></textarea>
+<input type="file" id="fileInput" accept=".txt">
+<button onclick="importMCQFile()">Import Questions</button>
+<button class="danger" onclick="resetData()">Reset All Data</button>
+</div>
 
-    <div id="question-container"></div>
+<div class="box">
+<h3>Quiz Play Mode</h3>
 
-    <div class="nav-btns">
-      <button onclick="prevQuestion()">⬅️ Previous</button>
-      <button onclick="nextQuestion()">➡️ Next</button>
-      <button onclick="submitQuiz()">✅ Submit</button>
-    </div>
-  </div>
+<label>Category</label>
+<select id="playCategory" onchange="categoryChanged()">
+<option value="">--Select--</option>
+<option value="1">GK</option>
+<option value="2">Geography</option>
+<option value="3">History</option>
+<option value="4">Economics</option>
+<option value="5">Science</option>
+<option value="6">Technology</option>
+<option value="7">Guess - Movie</option>
+<option value="8">Guess - Brand</option>
+</select>
 
-  <div id="result-screen" class="screen hidden">
-    <h2>📊 Result Analysis</h2>
-    <div id="result-message"></div>
-    <div id="details"></div>
-    <p id="footnote">⚠️ Bhai, ye sirf practice ke liye hai — serious test me aur mahinat kar!</p>
-    <button onclick="location.reload()">🔁 Restart</button>
-  </div>
+<label>Difficulty (1 / 2 / 3)</label>
+<input id="playDiff">
 
-  <script src="script.js"></script>
+<label>Search by Question No</label>
+<input id="searchQno">
+<button onclick="searchQuestion()">Find Question</button>
+
+<button onclick="startQuiz()">Start Quiz</button>
+
+<div id="quizArea">
+<h4 id="qno"></h4>
+<p id="qtext"></p>
+<div id="opts"></div>
+
+<button id="submitBtn" onclick="submitAnswer()">Submit Answer</button>
+<button id="prevBtn" onclick="prevQ()">Previous</button>
+<button onclick="nextQ()">Next</button>
+<button onclick="markAsked()">Mark as Asked</button>
+</div>
+</div>
+
+<div class="box">
+<h3>All Questions (Organiser View)</h3>
+<div id="askedArea"></div>
+</div>
+</div>
+
+<div id="notify"></div>
+
+<script src="script.js"></script>
 </body>
 </html>
