@@ -1,151 +1,194 @@
-let questions = [];
-let currentQuestion = 0;
-let timer;
-let timeLeft;
-let correctMarks = 4;
-let wrongMarks = 1;
-let quizData = [];
-let questionTimes = [];
-let quizStartTime;
+const categoryMap={1:'GK',2:'Geography',3:'History',4:'Economics',5:'Science',6:'Technology',7:'Guess-Movie',8:'Guess-Brand'};
+const difficultyMap={1:'Easy',2:'Medium',3:'Hard'};
 
-// Add Question Manually
-document.getElementById("add-question-btn").addEventListener("click", () => {
-  if (questions.length >= 200) return alert("Chutiye! 200 question ka kya karega 😆");
-  
-  const qText = prompt("Enter Question Text:");
-  if (!qText) return;
-  const optCount = parseInt(prompt("Kitne options (2–5)?"));
-  if (optCount < 2 || optCount > 5) return alert("Between 2–5 options only!");
-  
-  let opts = [];
-  for (let i = 0; i < optCount; i++) {
-    opts.push(prompt(`Option ${i + 1}:`));
+let questions=[],playList=[],currentIndex=0,selectedOption=null;
+
+window.onload=()=>{
+  const saved=localStorage.getItem('quizData');
+  if(saved){
+    questions=JSON.parse(saved);
+    updateAskedArea();
   }
-  const ans = parseInt(prompt("Correct Option Number (1–" + optCount + "):")) - 1;
-  
-  questions.push({ qText, opts, ans });
-  showQuestionList();
-});
+};
 
-function showQuestionList() {
-  let div = document.getElementById("question-list");
-  div.innerHTML = "<h3>Added Questions:</h3>";
-  questions.forEach((q, i) => {
-    div.innerHTML += `<div>${i + 1}. ${q.qText}</div>`;
-  });
+function saveData(){
+  localStorage.setItem('quizData',JSON.stringify(questions));
 }
 
-function startTest() {
-  if (questions.length === 0) return alert("Add at least 1 question first!");
-
-  correctMarks = parseInt(document.getElementById("marks-correct").value);
-  wrongMarks = parseInt(document.getElementById("marks-wrong").value);
-  timeLeft = parseInt(document.getElementById("time-limit").value) * 60;
-
-  document.getElementById("setup-screen").classList.add("hidden");
-  document.getElementById("quiz-screen").classList.remove("hidden");
-  
-  quizData = new Array(questions.length).fill(null);
-  questionTimes = new Array(questions.length).fill(0);
-  quizStartTime = Date.now();
-
-  showQuestion();
-  startTimer();
+function showNotify(msg){
+  const n=document.getElementById('notify');
+  n.innerText=msg;
+  n.style.display='block';
+  setTimeout(()=>n.style.display='none',2000);
 }
 
-function startTimer() {
-  const timerEl = document.getElementById("timer");
-  timer = setInterval(() => {
-    if (timeLeft <= 0) {
-      clearInterval(timer);
-      submitQuiz();
-    }
-    let min = Math.floor(timeLeft / 60);
-    let sec = timeLeft % 60;
-    timerEl.innerText = `${min}:${sec < 10 ? "0" + sec : sec}`;
-    timeLeft--;
-  }, 1000);
+function generateQNo(cat,diff){
+  const count=questions.filter(q=>q.cat==cat && q.diff==diff).length+1;
+  return `${cat}${diff}${count}`;
 }
 
-function showQuestion() {
-  const q = questions[currentQuestion];
-  const container = document.getElementById("question-container");
-  const countEl = document.getElementById("question-count");
-  countEl.innerText = `Q ${currentQuestion + 1} / ${questions.length}`;
-  
-  let html = `<h3>${q.qText}</h3>`;
-  q.opts.forEach((opt, i) => {
-    let selected = quizData[currentQuestion] === i ? "selected" : "";
-    html += `<div class="option ${selected}" onclick="selectOption(${i})">${opt}</div>`;
-  });
-  container.innerHTML = html;
-}
+function importMCQFile(){
+  const raw=document.getElementById('bulkInput').value.trim();
+  const file=document.getElementById('fileInput');
 
-function selectOption(index) {
-  const currentTime = Math.floor((Date.now() - quizStartTime) / 1000);
-  questionTimes[currentQuestion] = currentTime;
-  quizData[currentQuestion] = index;
-  showQuestion();
-}
-
-function nextQuestion() {
-  if (currentQuestion < questions.length - 1) {
-    currentQuestion++;
-    showQuestion();
+  if(file.files.length){
+    const reader=new FileReader();
+    reader.onload=e=>parseMCQ(e.target.result);
+    reader.readAsText(file.files[0]);
+  }else if(raw){
+    parseMCQ(raw);
+  }else{
+    showNotify('Paste text or choose file');
   }
 }
 
-function prevQuestion() {
-  if (currentQuestion > 0) {
-    currentQuestion--;
-    showQuestion();
-  }
-}
+function parseMCQ(raw){
+  const blocks=raw.split(/\n\s*\n/);
+  let added=0;
 
-function submitQuiz() {
-  clearInterval(timer);
-  document.getElementById("quiz-screen").classList.add("hidden");
-  document.getElementById("result-screen").classList.remove("hidden");
+  blocks.forEach(b=>{
+    let cat,diff,ques,A,B,C,D,ans;
+    b.split('\n').forEach(l=>{
+      if(l.startsWith('CATEGORY:')) cat=l.split(':')[1].trim();
+      if(l.startsWith('DIFFICULTY:')) diff=l.split(':')[1].trim();
+      if(l.startsWith('QUESTION:')) ques=l.replace('QUESTION:','').trim();
+      if(l.startsWith('A)')) A=l.trim();
+      if(l.startsWith('B)')) B=l.trim();
+      if(l.startsWith('C)')) C=l.trim();
+      if(l.startsWith('D)')) D=l.trim();
+      if(l.startsWith('ANSWER:')) ans=l.split(':')[1].trim();
+    });
 
-  let score = 0;
-  let correct = 0;
-  questions.forEach((q, i) => {
-    if (quizData[i] === q.ans) {
-      score += correctMarks;
-      correct++;
-    } else if (quizData[i] != null) {
-      score -= wrongMarks;
+    if(cat && diff && ques && A && B && C && D && ans){
+      questions.push({
+        qno:generateQNo(cat,diff),
+        cat,diff,ques,A,B,C,D,ans,asked:false
+      });
+      added++;
     }
   });
 
-  const percent = (correct / questions.length) * 100;
-  const msgEl = document.getElementById("result-message");
-  const detailsEl = document.getElementById("details");
+  saveData();
+  updateAskedArea();
+  showNotify(`Questions imported: ${added}`);
+}
 
-  if (percent === 100) {
-    msgEl.innerHTML = "🟡 GOD LEVEL! Bhai tu to legend nikla 😱🔥";
-    document.body.style.background = "linear-gradient(135deg, white, gold)";
-    document.body.style.color = "black";
-  } else if (percent >= 90) {
-    msgEl.innerHTML = "💫 Bhai Confirm hai, paaka selection! 💪";
-    document.body.style.background = "linear-gradient(135deg, #fef9d7, #d299c2)";
-  } else if (percent >= 50) {
-    msgEl.innerHTML = "😎 Bhai tera selection ho jayega! Keep pushing!";
-  } else {
-    msgEl.innerHTML = "💀 Bhaiya ji sorry... apka ni ho payega 😭";
-    document.body.style.background = "linear-gradient(135deg, #111, #400)";
+function categoryChanged(){
+  document.getElementById('quizArea').style.display='none';
+}
+
+function startQuiz(){
+  const c=playCategory.value;
+  const d=playDiff.value;
+
+  if(!c || !d){
+    showNotify('Select category & difficulty');
+    return;
   }
 
-  let detailHTML = `
-    <p>Total Questions: ${questions.length}</p>
-    <p>Correct Answers: ${correct}</p>
-    <p>Score: ${score}</p>
-    <p>Accuracy: ${percent.toFixed(1)}%</p>
-    <h3>⏱️ Answer Time Details:</h3>
-  `;
-  questions.forEach((q, i) => {
-    detailHTML += `<div>Q${i + 1}: answered in ${questionTimes[i]}s</div>`;
+  playList=questions.filter(q=>q.cat==c && q.diff==d);
+  if(!playList.length){
+    showNotify('No questions found');
+    return;
+  }
+
+  currentIndex=0;
+  quizArea.style.display='block';
+  showQ();
+}
+
+function searchQuestion(){
+  const qno=searchQno.value.trim();
+  const q=questions.find(q=>q.qno===qno);
+  if(!q){ showNotify('Not found'); return; }
+  playList=[q];
+  currentIndex=0;
+  quizArea.style.display='block';
+  showQ();
+}
+
+function showQ(){
+  selectedOption=null;
+  const q=playList[currentIndex];
+
+  qno.innerText=`Q No: ${q.qno}`;
+  qtext.innerText=q.ques;
+  opts.innerHTML='';
+
+  ['A','B','C','D'].forEach(o=>{
+    const b=document.createElement('button');
+    b.innerText=q[o];
+
+    if(q.asked){
+      b.className=o===q.ans?'correct':'asked';
+      b.disabled=true;
+    }else{
+      b.onclick=()=>{
+        selectedOption=o;
+        [...opts.children].forEach(x=>x.style.border='1px solid #ccc');
+        b.style.border='2px solid #007bff';
+      };
+    }
+    opts.appendChild(b);
   });
 
-  detailsEl.innerHTML = detailHTML;
+  submitBtn.style.display=q.asked?'none':'block';
+  prevBtn.style.display=currentIndex>0?'block':'none';
+}
+
+function submitAnswer(){
+  if(!selectedOption){ showNotify('Select option'); return; }
+  const q=playList[currentIndex];
+
+  [...opts.children].forEach(b=>{
+    if(b.innerText===q[q.ans]) b.classList.add('correct');
+    else if(b.style.border.includes('2px')) b.classList.add('wrong');
+    b.disabled=true;
+  });
+}
+
+function nextQ(){
+  if(currentIndex<playList.length-1){
+    currentIndex++; showQ();
+  }
+}
+
+function prevQ(){
+  if(currentIndex>0){
+    currentIndex--; showQ();
+  }
+}
+
+function markAsked(){
+  playList[currentIndex].asked=true;
+  saveData();
+  updateAskedArea();
+  showQ();
+}
+
+function resetData(){
+  if(confirm('Delete all data?')){
+    questions=[];
+    saveData();
+    updateAskedArea();
+    quizArea.style.display='none';
+  }
+}
+
+function updateAskedArea(){
+  askedArea.innerHTML='';
+  const asked=questions.filter(q=>q.asked);
+  if(!asked.length){
+    askedArea.innerText='No asked questions yet';
+    return;
+  }
+
+  asked.forEach(q=>{
+    askedArea.innerHTML+=`
+    <div class="box">
+      <b>${q.qno}</b><br>
+      ${q.ques}<br>
+      Answer: ${q.ans}
+    </div>`;
+  });
 }
